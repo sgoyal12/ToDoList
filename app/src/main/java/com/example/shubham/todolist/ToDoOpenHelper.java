@@ -11,14 +11,21 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class ToDoOpenHelper extends SQLiteOpenHelper {
     public static  final  String DATABASE_NAME="todo_db";
     public final static  int VERSION=1;
-    public ToDoOpenHelper(Context context) {
+    public  static  ToDoOpenHelper openHelper;
+    private ToDoOpenHelper(Context context) {
         super(context, DATABASE_NAME, null, VERSION);
     }
-
+    public static ToDoOpenHelper getOpenHelper(Context context)
+    {
+        if(openHelper==null){
+           openHelper=new ToDoOpenHelper(context.getApplicationContext());
+        }
+        return openHelper;
+    }
     @Override
     public void onCreate(SQLiteDatabase db) {
         String SQLquery="CREATE TABLE "+Contract.todo.Todo_TABLE_NAME+
-                " ("+Contract.todo.Todo_COLOUMN_ID+" INTEGER,"
+                " ("+Contract.todo.Todo_COLOUMN_ID+" INTEGER PRIMARY KEY AUTOINCREMENT,"
                 +Contract.todo.Todo_COLOUMN_NAME+" TEXT,"
                 +Contract.todo.Todo_COLOUMN_DESCRIPTION+" TEXT,"+Contract.todo.Todo_COLOUMN_DATE+" Text)";
         db.execSQL(SQLquery);

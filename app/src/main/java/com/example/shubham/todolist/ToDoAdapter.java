@@ -33,15 +33,25 @@ public class ToDoAdapter extends ArrayAdapter {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        View output= inflater.inflate(R.layout.row_layout,parent,false);
-        TextView tvname,tvdesc,tvdate;
-        tvname=output.findViewById(R.id.tvtitle);
-        tvdesc=output.findViewById(R.id.tvdesc);
-        tvdate=output.findViewById(R.id.tvdate);
+        View output= convertView;
+        if(output==null){
+            output=inflater.inflate(R.layout.row_layout,parent,false);
+            TextView tvname,tvdesc,tvdate;
+            tvname=output.findViewById(R.id.tvtitle);
+            tvdesc=output.findViewById(R.id.tvdesc);
+            tvdate=output.findViewById(R.id.tvdate);
+            ToDoViewHolder viewHolder=new ToDoViewHolder();
+            viewHolder.title=tvname;
+            viewHolder.descr=tvdesc;
+            viewHolder.date=tvdate;
+            output.setTag(viewHolder);
+
+        }
+        ToDoViewHolder viewHolder=(ToDoViewHolder) output.getTag();
         ToDoItem add=item.get(position);
-        tvname.setText(add.getName());
-        tvdesc.setText(add.getDescription());
-        tvdate.setText(add.getDate());
+        viewHolder.title.setText(add.getName());
+        viewHolder.descr.setText(add.getDescription());
+        viewHolder.date.setText(add.getDate());
         return output;
     }
 }

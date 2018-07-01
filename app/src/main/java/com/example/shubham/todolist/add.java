@@ -1,8 +1,10 @@
 package com.example.shubham.todolist;
 
 import android.app.DatePickerDialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -51,9 +53,14 @@ public class add extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Bundle bundle=new Bundle();
-                bundle.putString(MainActivity.TITLE,et1.getText().toString());
-                bundle.putString(MainActivity.DESC,et2.getText().toString());
-                bundle.putString(MainActivity.DATE,et3.getText().toString());
+                ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(add.this);
+                SQLiteDatabase database=openHelper.getWritableDatabase();
+                ContentValues contentValues=new ContentValues();
+                contentValues.put(Contract.todo.Todo_COLOUMN_NAME,et1.getText().toString());
+                contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,et2.getText().toString());
+                contentValues.put(Contract.todo.Todo_COLOUMN_DATE,et3.getText().toString());
+                Long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+                bundle.putLong(MainActivity.ID,id);
                 Intent data=new Intent();
                 data.putExtras(bundle);
                 setResult(ADD_RESULT_CODE,data);

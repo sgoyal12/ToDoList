@@ -1,6 +1,8 @@
 package com.example.shubham.todolist;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -26,6 +28,9 @@ public final static int EDIT_REQUEST_CODE=2,DESC_RESULT_CODE=3;
 //        back=findViewById(R.id.back);
         Intent intent=getIntent();
         bundle=intent.getExtras();
+        Intent data=new Intent();
+        data.putExtras(bundle);
+        setResult(DESC_RESULT_CODE,data);
         setTAD();
 //        back.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -37,15 +42,21 @@ public final static int EDIT_REQUEST_CODE=2,DESC_RESULT_CODE=3;
     }
 
     private void setTAD() {
-        String name=bundle.getString(MainActivity.TITLE);
-        String desc=bundle.getString(MainActivity.DESC);
-        String date=bundle.getString(MainActivity.DATE);
-        tvname.setText(name);
-        tvdesc.setText(desc);
-        tvdate.setText(date);
-        Intent data=new Intent();
-        data.putExtras(bundle);
-        setResult(DESC_RESULT_CODE,data);
+//        String name=bundle.getString(MainActivity.TITLE);
+//        String desc=bundle.getString(MainActivity.DESC);
+//        String date=bundle.getString(MainActivity.DATE);
+        Long id=bundle.getLong(MainActivity.ID);
+        String []array={""+id};
+        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
+        SQLiteDatabase db=openHelper.getReadableDatabase();
+        Cursor cursor=db.query(Contract.todo.Todo_TABLE_NAME,null,Contract.todo.Todo_COLOUMN_ID+" = ?",array,null,null,null);
+        cursor.moveToNext();
+        int a=cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME);
+        String title=cursor.getString(a);
+        tvname.setText(title);
+        tvdesc.setText(cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION)));
+        tvdate.setText(cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE)));
+        cursor.close();
     }
 
     @Override
