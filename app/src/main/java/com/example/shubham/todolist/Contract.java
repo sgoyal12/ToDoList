@@ -10,5 +10,6 @@ public class Contract {
     public static final String Todo_COLOUMN_NAME = "name";
     public static final String Todo_COLOUMN_DESCRIPTION = "description";
     public static final String Todo_COLOUMN_DATE ="date";
+    public static final String Todo_COLOUMN_TIME ="time";
     public static final String Todo_COLOUMN_ID="id";}
 }

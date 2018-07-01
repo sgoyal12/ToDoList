@@ -23,10 +23,17 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter date"
-        android:inputType="date"
+        android:hint="Enter Date"
+        android:inputType="none"
         android:textSize="25dp"
         android:id="@+id/getdate"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Time"
+        android:inputType="none"
+        android:textSize="25dp"
+        android:id="@+id/gettime"/>
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

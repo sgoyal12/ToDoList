@@ -7,5 +7,5 @@ import android.widget.TextView;
  */
 
 public class ToDoViewHolder {
-    public TextView title,descr,date;
+    public TextView title,descr,date,time;
 }

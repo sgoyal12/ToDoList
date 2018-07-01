@@ -8,12 +8,14 @@ public class ToDoItem {
     private String name;
     private String description;
     private String date;
+    private String time;
     private long id;
 
-    public ToDoItem(String name, String description,String date) {
+    public ToDoItem(String name, String description, String date, String time) {
         this.name = name;
         this.description = description;
         this.date=date;
+        this.time = time;
     }
 
     public long getId() {
@@ -46,5 +48,13 @@ public class ToDoItem {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 }

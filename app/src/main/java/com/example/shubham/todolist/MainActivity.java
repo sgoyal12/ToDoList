@@ -1,7 +1,5 @@
 package com.example.shubham.todolist;
 
-import android.app.DatePickerDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -11,24 +9,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.DatePicker;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
     ListView lv;
     ArrayList<ToDoItem> toDoItems=new ArrayList<>();
-    public final static String TITLE="title",DESC="description",POS="position",DATE="date",ID="ItemID";
+    public final static String TITLE="title",DESC="description",POS="position",DATE="date",Time="time",ID="ItemID";
     public final static  int DESC_REQUEST_CODE=1,ADD_REQUEST_CODE=6;
     ToDoAdapter adapter;
     LayoutInflater inflater;
@@ -51,8 +43,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             String name=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME));
             String description=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION));
             String date=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE));
+            String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
             Long id=cursor.getLong(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_ID));
-            ToDoItem toDoItem =new ToDoItem(name,description,date);
+            ToDoItem toDoItem =new ToDoItem(name,description,date, time);
             toDoItem.setId(id);
             toDoItems.add(toDoItem);
         }
@@ -72,13 +65,37 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id=item.getItemId();
-        if(id==R.id.add);
+        if(id==R.id.add)
         {
             Intent add=new Intent(MainActivity.this,add.class);
             startActivityForResult(add,ADD_REQUEST_CODE);
 
         }
+        else if(id==R.id.orderbytitle)
+            {
+            orderbytitle();
+        }
         return true;
+    }
+
+    private void orderbytitle() {
+        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
+        SQLiteDatabase database=openHelper.getReadableDatabase();
+        Cursor cursor=database.query(Contract.todo.Todo_TABLE_NAME,null,null,null,null,null,Contract.todo.Todo_COLOUMN_NAME);
+        toDoItems.clear();
+        while (cursor.moveToNext())
+        {
+            String name=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME));
+            String description=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION));
+            String date=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE));
+            String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
+            Long id=cursor.getLong(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_ID));
+            ToDoItem toDoItem =new ToDoItem(name,description,date, time);
+            toDoItem.setId(id);
+            toDoItems.add(toDoItem);
+        }
+        cursor.close();
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -139,8 +156,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String title=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME));
         String descr=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION));
         String date=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE));
+        String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
         cursor.close();
-        ToDoItem toDoItem= new ToDoItem(title,descr,date);
+        ToDoItem toDoItem= new ToDoItem(title,descr,date, time);
         if(resultCode==desc.DESC_RESULT_CODE)
             {
                 toDoItems.set(bundle.getInt(POS),toDoItem);

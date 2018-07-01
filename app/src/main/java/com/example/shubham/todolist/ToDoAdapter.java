@@ -36,14 +36,16 @@ public class ToDoAdapter extends ArrayAdapter {
         View output= convertView;
         if(output==null){
             output=inflater.inflate(R.layout.row_layout,parent,false);
-            TextView tvname,tvdesc,tvdate;
+            TextView tvname,tvdesc,tvdate,tvtime;
             tvname=output.findViewById(R.id.tvtitle);
             tvdesc=output.findViewById(R.id.tvdesc);
             tvdate=output.findViewById(R.id.tvdate);
+            tvtime=output.findViewById(R.id.tvtime);
             ToDoViewHolder viewHolder=new ToDoViewHolder();
             viewHolder.title=tvname;
             viewHolder.descr=tvdesc;
             viewHolder.date=tvdate;
+            viewHolder.time=tvtime;
             output.setTag(viewHolder);
 
         }
@@ -52,6 +54,7 @@ public class ToDoAdapter extends ArrayAdapter {
         viewHolder.title.setText(add.getName());
         viewHolder.descr.setText(add.getDescription());
         viewHolder.date.setText(add.getDate());
+        viewHolder.time.setText(add.getTime());
         return output;
     }
 }

@@ -21,14 +21,27 @@
         android:hint="Description Is Shown Here"
         android:id="@+id/desctv1"
         />
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:textSize="30dp"
-        android:layout_weight="0.1"
-        android:hint="Date Is Shown Here"
-        android:id="@+id/datetv1"
-        />
+        android:layout_weight="0.15">
+        <TextView
+            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            android:textSize="30dp"
+            android:layout_weight="0.1"
+            android:hint="Date Is Shown Here"
+            android:id="@+id/datetv1"
+            />
+        <TextView
+            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            android:textSize="30dp"
+            android:layout_weight="0.1"
+            android:hint="Time Is Shown Here"
+            android:id="@+id/timetv1"
+            />
+    </LinearLayout>
     <!--<Button-->
         <!--android:layout_width="wrap_content"-->
         <!--android:layout_height="wrap_content"-->
