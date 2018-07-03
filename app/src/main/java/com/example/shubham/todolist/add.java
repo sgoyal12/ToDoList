@@ -34,12 +34,20 @@ public class add extends AppCompatActivity {
         tv4=findViewById(R.id.gettime);
         btnsave=findViewById(R.id.saveitem);
         final Calendar c = Calendar.getInstance();
-       et3.setOnClickListener(new View.OnClickListener() {
+        final int mYear = c.get(Calendar.YEAR);
+        final int mMonth = c.get(Calendar.MONTH);
+        final int mDay = c.get(Calendar.DAY_OF_MONTH);
+        final int mhours=c.get(Calendar.HOUR_OF_DAY);
+        final int mmin=c.get(Calendar.MINUTE);
+        Intent intent=getIntent();
+        String message=intent.getStringExtra(Intent.EXTRA_TEXT);
+        et2.setText(message);
+        et3.setText(String.format("%d/%d/%d",mDay,(mMonth + 1),mYear));
+        tv4.setText(String.format("%d:%d",mhours,mmin));
+        et3.setOnClickListener(new View.OnClickListener() {
            @Override
            public void onClick(View v) {
-               int mYear = c.get(Calendar.YEAR);
-               int mMonth = c.get(Calendar.MONTH);
-               int mDay = c.get(Calendar.DAY_OF_MONTH);
+
                DatePickerDialog dpd = new DatePickerDialog(add.this, new DatePickerDialog.OnDateSetListener() {
 
                    @Override
@@ -55,8 +63,7 @@ public class add extends AppCompatActivity {
        tv4.setOnClickListener(new View.OnClickListener() {
            @Override
            public void onClick(View v) {
-               int mhours=c.get(Calendar.HOUR_OF_DAY);
-               int mmin=c.get(Calendar.MINUTE);
+
                TimePickerDialog tpd=new TimePickerDialog(add.this, new TimePickerDialog.OnTimeSetListener() {
                    @Override
                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {

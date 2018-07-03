@@ -12,4 +12,6 @@
         <item android:id="@+id/orderbytitle" android:title="Title"></item>
     </menu>
 </item>
+    <item android:title="MakeSMSTodo" android:id="@+id/makeSmsTodo" android:checkable="true"
+        />
 </menu>

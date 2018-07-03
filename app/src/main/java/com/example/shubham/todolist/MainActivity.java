@@ -1,12 +1,15 @@
 package com.example.shubham.todolist;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.telephony.SmsMessage;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,14 +20,17 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 
+import static android.provider.Telephony.Sms.Intents.getMessagesFromIntent;
+
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
     ListView lv;
     ArrayList<ToDoItem> toDoItems=new ArrayList<>();
-    public final static String TITLE="title",DESC="description",POS="position",DATE="date",Time="time",ID="ItemID";
+    public final static String ID="ItemID",POS="position";
     public final static  int DESC_REQUEST_CODE=1,ADD_REQUEST_CODE=6;
     ToDoAdapter adapter;
     LayoutInflater inflater;
     Bundle bundle=new Bundle();
+    MyReceiver receiver;
 
 
     LinearLayout linear;
@@ -33,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         lv=findViewById(R.id.list);
+
         inflater= (LayoutInflater) this.getSystemService(this.LAYOUT_INFLATER_SERVICE);
         linear=findViewById(R.id.linear);
         ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
@@ -68,12 +75,43 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if(id==R.id.add)
         {
             Intent add=new Intent(MainActivity.this,add.class);
+            add.putExtra(Intent.EXTRA_TEXT,"");
             startActivityForResult(add,ADD_REQUEST_CODE);
 
         }
         else if(id==R.id.orderbytitle)
             {
             orderbytitle();
+
+        }
+        else if(id==R.id.makeSmsTodo)
+        {
+            if( item.isChecked())
+            {
+                item.setChecked(false);
+                this.unregisterReceiver(this.receiver);
+            }
+            else
+            {
+                item.setChecked(true);
+                receiver=new MyReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        SmsMessage[] ar=getMessagesFromIntent(intent);
+                        for (int i = 0; i < ar.length; i++) {
+
+                            SmsMessage currentMessage = ar[i];
+                            String message = currentMessage.getDisplayMessageBody();
+                            Intent intent1=new Intent(MainActivity.this,add.class);
+                            intent1.putExtra(Intent.EXTRA_TEXT,message);
+                            startActivityForResult(intent1,ADD_REQUEST_CODE);
+                        }
+                    }
+                };
+                IntentFilter intentFilter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
+                intentFilter.setPriority(999);
+                this.registerReceiver(receiver, intentFilter);
+            }
         }
         return true;
     }
@@ -173,4 +211,5 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 }
             }
     }}
+
 }
