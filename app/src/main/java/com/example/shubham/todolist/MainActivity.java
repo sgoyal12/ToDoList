@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -112,6 +113,22 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 intentFilter.setPriority(999);
                 this.registerReceiver(receiver, intentFilter);
             }
+        }
+        else if(id==R.id.Aboutus)
+        {
+            Intent intent =new Intent();
+            intent.setAction(Intent.ACTION_VIEW);
+            Uri uri=Uri.parse("https://codingninjas.in/");
+            intent.setData(uri);
+            startActivity(intent);
+        }
+        else if(id==R.id.feedback)
+        {
+            Intent intent =new Intent();
+            intent.setAction(Intent.ACTION_SENDTO);
+            Uri uri=Uri.parse("mailto:shu12.sg@gmail.com");
+            intent.setData(uri);
+            startActivity(intent);
         }
         return true;
     }

@@ -14,4 +14,6 @@
 </item>
     <item android:title="MakeSMSTodo" android:id="@+id/makeSmsTodo" android:checkable="true"
         />
+    <item android:title="About us" android:id="@+id/Aboutus"/>
+    <item android:title="Send Feedback" android:id="@+id/feedback"/>
 </menu>
