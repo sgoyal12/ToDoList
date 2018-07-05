@@ -1,5 +1,6 @@
 package com.example.shubham.todolist;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,18 +21,21 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import static android.provider.Telephony.Sms.Intents.getMessagesFromIntent;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
     ListView lv;
     ArrayList<ToDoItem> toDoItems=new ArrayList<>();
-    public final static String ID="ItemID",POS="position";
+    Intent intent=getIntent();
+    public final static String ID="ItemID",POS="position",NUMBER="number";
     public final static  int DESC_REQUEST_CODE=1,ADD_REQUEST_CODE=6;
+    public static boolean readOn=false;
     ToDoAdapter adapter;
     LayoutInflater inflater;
     Bundle bundle=new Bundle();
-    MyReceiver receiver;
+//    MyReceiver receiver;
 
 
     LinearLayout linear;
@@ -58,10 +62,37 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             toDoItems.add(toDoItem);
         }
         cursor.close();
+        addMessage();
         adapter=new ToDoAdapter(this,toDoItems);
         lv.setAdapter(adapter);
         lv.setOnItemClickListener(this);
         lv.setOnItemLongClickListener(this);
+    }
+
+    private void addMessage() {
+        if(intent!=null)
+        {
+            String message,number;
+            message=intent.getStringExtra(Intent.EXTRA_TEXT);
+            number=intent.getStringExtra(NUMBER);
+            final Calendar c = Calendar.getInstance();
+            final int mYear = c.get(Calendar.YEAR);
+            final int mMonth = c.get(Calendar.MONTH);
+            final int mDay = c.get(Calendar.DAY_OF_MONTH);
+            final int mhours=c.get(Calendar.HOUR_OF_DAY);
+            final int mmin=c.get(Calendar.MINUTE);
+            ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
+            SQLiteDatabase database=openHelper.getWritableDatabase();
+            ContentValues contentValues=new ContentValues();
+            contentValues.put(Contract.todo.Todo_COLOUMN_NAME,number);
+            contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,message);
+            contentValues.put(Contract.todo.Todo_COLOUMN_DATE,String.format("%d/%d/%d",mDay,mMonth+1,mYear));
+            contentValues.put(Contract.todo.Todo_COLOUMN_TIME,String.format("%d:%d",mhours,mmin));
+            Long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+            ToDoItem toDoItem=new ToDoItem(number,message,String.format("%d/%d/%d",mDay,mMonth+1,mYear),String.format("%d:%d",mhours,mmin));
+            toDoItem.setId(id);
+            toDoItems.add(toDoItem);
+        }
     }
 
     @Override
@@ -90,28 +121,30 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             if( item.isChecked())
             {
                 item.setChecked(false);
-                this.unregisterReceiver(this.receiver);
+//                this.unregisterReceiver(this.receiver);
+                readOn=false;
             }
             else
             {
                 item.setChecked(true);
-                receiver=new MyReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        SmsMessage[] ar=getMessagesFromIntent(intent);
-                        for (int i = 0; i < ar.length; i++) {
-
-                            SmsMessage currentMessage = ar[i];
-                            String message = currentMessage.getDisplayMessageBody();
-                            Intent intent1=new Intent(MainActivity.this,add.class);
-                            intent1.putExtra(Intent.EXTRA_TEXT,message);
-                            startActivityForResult(intent1,ADD_REQUEST_CODE);
-                        }
-                    }
-                };
-                IntentFilter intentFilter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
-                intentFilter.setPriority(999);
-                this.registerReceiver(receiver, intentFilter);
+                readOn=true;
+//                receiver=new MyReceiver() {
+//                    @Override
+//                    public void onReceive(Context context, Intent intent) {
+//                        SmsMessage[] ar=getMessagesFromIntent(intent);
+//                        for (int i = 0; i < ar.length; i++) {
+//
+//                            SmsMessage currentMessage = ar[i];
+//                            String message = currentMessage.getDisplayMessageBody();
+//                            Intent intent1=new Intent(MainActivity.this,add.class);
+//                            intent1.putExtra(Intent.EXTRA_TEXT,message);
+//                            startActivityForResult(intent1,ADD_REQUEST_CODE);
+//                        }
+//                    }
+//                };
+//                IntentFilter intentFilter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
+//                intentFilter.setPriority(999);
+//                this.registerReceiver(receiver, intentFilter);
             }
         }
         else if(id==R.id.Aboutus)
