@@ -1,6 +1,8 @@
 package com.example.shubham.todolist;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -85,7 +87,7 @@ public final static int EDIT_RESULT_CODE=0;
             @Override
             public void onClick(View v) {
                 String title,descr,date,time;
-                if(et1.getText().toString()!=""&&et2.getText().toString()!=""&&et3.getText().toString()!=""&&tv4.getText().toString()!=""){
+                if(et1.getText().toString()!=""||et2.getText().toString()!=""||et3.getText().toString()!=""||tv4.getText().toString()!=""){
                     title=et1.getText().toString();
                     descr=et2.getText().toString();
                     date=et3.getText().toString();
@@ -98,6 +100,25 @@ public final static int EDIT_RESULT_CODE=0;
                     contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,descr);
                     contentValues.put(Contract.todo.Todo_COLOUMN_DATE,date);
                     contentValues.put(Contract.todo.Todo_COLOUMN_TIME,time);
+                    String[] dateC=date.split("/");
+                    String[] timeC=time.split(":");
+                    int day,month,year,hours,min;
+                    day=Integer.parseInt(dateC[0]);
+                    month=Integer.parseInt(dateC[1]);
+                    year=Integer.parseInt(dateC[2]);
+                    hours=Integer.parseInt(timeC[0]);
+                    min=Integer.parseInt(timeC[1]);
+                    Calendar calendar=Calendar.getInstance();
+                    calendar.clear();
+                    calendar.set(year,month-1,day,hours,min);
+                    long timeInMillies=calendar.getTimeInMillis();
+                    long id=bundle.getLong(MainActivity.ID);
+                    int a=(int) id;
+                    Intent intent1=new Intent(Edit.this,MyReceiver2.class);
+                    intent1.putExtras(bundle);
+                    PendingIntent pendingIntent= PendingIntent.getBroadcast(Edit.this,a,intent1,0);
+                    AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
                     database.update(Contract.todo.Todo_TABLE_NAME,contentValues,Contract.todo.Todo_COLOUMN_ID+" = ?",array);
                     finish();
                 }

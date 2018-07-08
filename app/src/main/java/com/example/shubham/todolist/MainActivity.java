@@ -1,13 +1,18 @@
 package com.example.shubham.todolist;
 
+import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +24,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,12 +34,14 @@ import static android.provider.Telephony.Sms.Intents.getMessagesFromIntent;
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
     ListView lv;
     ArrayList<ToDoItem> toDoItems=new ArrayList<>();
-    Intent intent=getIntent();
-    public final static String ID="ItemID",POS="position",NUMBER="number";
+
+    public final static String ID="ItemID",POS="position",NUMBER="number",READ_ON="readon";
     public final static  int DESC_REQUEST_CODE=1,ADD_REQUEST_CODE=6;
-    public static boolean readOn=false;
+    public static boolean readOn=false,perm=false;
+    SharedPreferences sharedPreferences;
     ToDoAdapter adapter;
     LayoutInflater inflater;
+    MenuItem item;
     Bundle bundle=new Bundle();
 //    MyReceiver receiver;
 
@@ -43,6 +51,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Intent intent=getIntent();
+        sharedPreferences=getSharedPreferences("SharedPreference",MODE_PRIVATE);
+        readOn=sharedPreferences.getBoolean(READ_ON,false);
+        if((checkSelfPermission(Manifest.permission.READ_SMS)== PackageManager.PERMISSION_GRANTED)&&(checkSelfPermission(Manifest.permission.RECEIVE_SMS)== PackageManager.PERMISSION_GRANTED))
+            perm=true;
         lv=findViewById(R.id.list);
 
         inflater= (LayoutInflater) this.getSystemService(this.LAYOUT_INFLATER_SERVICE);
@@ -62,19 +75,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             toDoItems.add(toDoItem);
         }
         cursor.close();
-        addMessage();
+        addMessage(intent);
         adapter=new ToDoAdapter(this,toDoItems);
         lv.setAdapter(adapter);
         lv.setOnItemClickListener(this);
         lv.setOnItemLongClickListener(this);
     }
 
-    private void addMessage() {
-        if(intent!=null)
+    private void addMessage(Intent intent) {
+        String message,number;
+        message=intent.getStringExtra(Intent.EXTRA_TEXT);
+
+        number=intent.getStringExtra(NUMBER);
+        if(message!=null&&number!=null)
         {
-            String message,number;
-            message=intent.getStringExtra(Intent.EXTRA_TEXT);
-            number=intent.getStringExtra(NUMBER);
+
             final Calendar c = Calendar.getInstance();
             final int mYear = c.get(Calendar.YEAR);
             final int mMonth = c.get(Calendar.MONTH);
@@ -92,12 +107,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             ToDoItem toDoItem=new ToDoItem(number,message,String.format("%d/%d/%d",mDay,mMonth+1,mYear),String.format("%d:%d",mhours,mmin));
             toDoItem.setId(id);
             toDoItems.add(toDoItem);
+
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu,menu);
+        item=menu.findItem(R.id.makeSmsTodo);
+        if(readOn)
+            item.setChecked(true);
         return true;
     }
 
@@ -126,8 +145,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
             else
             {
-                item.setChecked(true);
-                readOn=true;
+                if((checkSelfPermission(Manifest.permission.READ_SMS)!= PackageManager.PERMISSION_GRANTED)||(checkSelfPermission(Manifest.permission.RECEIVE_SMS)!= PackageManager.PERMISSION_GRANTED))
+                {
+                    String[] permission={Manifest.permission.READ_SMS,Manifest.permission.RECEIVE_SMS};
+                    ActivityCompat.requestPermissions(this,permission,1);
+                }
+                if(perm==true)
+                {
+                    item.setChecked(true);
+                    readOn=true;
+                }
+
 //                receiver=new MyReceiver() {
 //                    @Override
 //                    public void onReceive(Context context, Intent intent) {
@@ -146,6 +174,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 //                intentFilter.setPriority(999);
 //                this.registerReceiver(receiver, intentFilter);
             }
+            SharedPreferences.Editor editor= sharedPreferences.edit();
+            editor.putBoolean(READ_ON,readOn);
+            editor.commit();
         }
         else if(id==R.id.Aboutus)
         {
@@ -247,6 +278,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
         cursor.close();
         ToDoItem toDoItem= new ToDoItem(title,descr,date, time);
+        toDoItem.setId(bundle.getLong(ID));
         if(resultCode==desc.DESC_RESULT_CODE)
             {
                 toDoItems.set(bundle.getInt(POS),toDoItem);
@@ -262,4 +294,32 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
     }}
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode==1)
+        {   int i;
+            for (i=0;i<grantResults.length;i++)
+            {
+                int callGrantResult=grantResults[i];
+                if(callGrantResult==PackageManager.PERMISSION_DENIED)
+                    break;
+            }
+            if(i!=grantResults.length)
+                perm=false;
+            else {
+                perm=true;
+            }
+            if(perm==false)
+                 Toast.makeText(this,"Permission Not Granted",Toast.LENGTH_SHORT).show();
+            else if(perm)
+            {
+                readOn=true;
+                SharedPreferences.Editor editor= sharedPreferences.edit();
+                editor.putBoolean(READ_ON,readOn);
+                editor.commit();
+                item.setChecked(true);
+            }
+        }
+    }
 }

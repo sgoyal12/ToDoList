@@ -1,6 +1,8 @@
 package com.example.shubham.todolist;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -23,6 +25,7 @@ public class add extends AppCompatActivity {
     EditText et1,et2;
     TextView et3,tv4;
     Button btnsave;
+    long time;
     final static int ADD_RESULT_CODE=7;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +42,7 @@ public class add extends AppCompatActivity {
         final int mDay = c.get(Calendar.DAY_OF_MONTH);
         final int mhours=c.get(Calendar.HOUR_OF_DAY);
         final int mmin=c.get(Calendar.MINUTE);
+        time=System.currentTimeMillis();
         Intent intent=getIntent();
         String message=intent.getStringExtra(Intent.EXTRA_TEXT);
         et2.setText(message);
@@ -55,6 +59,7 @@ public class add extends AppCompatActivity {
                                          int monthOfYear, int dayOfMonth) {
                        // Display Selected date in textbox
                        et3.setText(String.format("%d/%d/%d",dayOfMonth,(monthOfYear + 1),year));
+
                    }
                }, mYear, mMonth, mDay);
                dpd.show();
@@ -78,19 +83,40 @@ public class add extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if(et1.getText().toString()!=""&&et2.getText().toString()!=""&&et3.getText().toString()!=""&&tv4.getText().toString()!="")
+                if(et1.getText().toString()!=""||et2.getText().toString()==""||et3.getText().toString()!=""||tv4.getText().toString()!="")
                 {
 
                     Bundle bundle=new Bundle();
+                    String date,time;
+                    date=et3.getText().toString();
+                    time =tv4.getText().toString();
                     ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(add.this);
                     SQLiteDatabase database=openHelper.getWritableDatabase();
                     ContentValues contentValues=new ContentValues();
                     contentValues.put(Contract.todo.Todo_COLOUMN_NAME,et1.getText().toString());
                     contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,et2.getText().toString());
-                    contentValues.put(Contract.todo.Todo_COLOUMN_DATE,et3.getText().toString());
-                    contentValues.put(Contract.todo.Todo_COLOUMN_TIME,tv4.getText().toString());
-                    Long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+                    contentValues.put(Contract.todo.Todo_COLOUMN_DATE,date);
+                    contentValues.put(Contract.todo.Todo_COLOUMN_TIME,time);
+                    String[] dateC=date.split("/");
+                    String[] timeC=time.split(":");
+                    int day,month,year,hours,min;
+                    day=Integer.parseInt(dateC[0]);
+                    month=Integer.parseInt(dateC[1]);
+                    year=Integer.parseInt(dateC[2]);
+                    hours=Integer.parseInt(timeC[0]);
+                    min=Integer.parseInt(timeC[1]);
+                    Calendar calendar=Calendar.getInstance();
+                    calendar.clear();
+                    calendar.set(year,month-1,day,hours,min);
+                    long timeInMillies=calendar.getTimeInMillis();
+                    long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+                    int a=(int) id; 
                     bundle.putLong(MainActivity.ID,id);
+                    Intent intent1=new Intent(add.this,MyReceiver2.class);
+                    intent1.putExtras(bundle);
+                    PendingIntent pendingIntent= PendingIntent.getBroadcast(add.this,a,intent1,0);
+                    AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
                     Intent data=new Intent();
                     data.putExtras(bundle);
                     setResult(ADD_RESULT_CODE,data);
