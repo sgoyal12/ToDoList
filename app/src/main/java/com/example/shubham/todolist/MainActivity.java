@@ -1,6 +1,8 @@
 package com.example.shubham.todolist;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -60,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         inflater= (LayoutInflater) this.getSystemService(this.LAYOUT_INFLATER_SERVICE);
         linear=findViewById(R.id.linear);
+        addMessage(intent);
         ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
         SQLiteDatabase database=openHelper.getReadableDatabase();
         Cursor cursor=database.query(Contract.todo.Todo_TABLE_NAME,null,null,null,null,null,null);
@@ -75,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             toDoItems.add(toDoItem);
         }
         cursor.close();
-        addMessage(intent);
+
         adapter=new ToDoAdapter(this,toDoItems);
         lv.setAdapter(adapter);
         lv.setOnItemClickListener(this);
@@ -103,10 +106,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,message);
             contentValues.put(Contract.todo.Todo_COLOUMN_DATE,String.format("%d/%d/%d",mDay,mMonth+1,mYear));
             contentValues.put(Contract.todo.Todo_COLOUMN_TIME,String.format("%d:%d",mhours,mmin));
-            Long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+            long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
             ToDoItem toDoItem=new ToDoItem(number,message,String.format("%d/%d/%d",mDay,mMonth+1,mYear),String.format("%d:%d",mhours,mmin));
-            toDoItem.setId(id);
-            toDoItems.add(toDoItem);
+            bundle.putLong(ID,id);
+            int a=(int) id;
+            long timeInMillies=toDoItem.getTimeInMillies();
+            Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
+            intent1.putExtras(bundle);
+            PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
+            AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+            alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
 
         }
     }

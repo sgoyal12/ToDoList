@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
@@ -25,14 +26,16 @@ public class MyReceiver2 extends BroadcastReceiver {
         }
 
 
-
+        Bundle bundle;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context,"mychannelid");
-        builder.setContentTitle("Expense Alarm");
+        builder.setContentTitle("ToDo Alarm");
         builder.setContentText("Alarm Received");
         builder.setSmallIcon(R.drawable.ic_launcher_foreground);
 
-        Intent intent1 = new Intent(context,MainActivity.class);
+        Intent intent1 = new Intent(context,desc.class);
+        bundle=intent.getExtras();
+        intent1.putExtras(bundle);
         PendingIntent pendingIntent = PendingIntent.getActivity(context,2,intent1,0);
 
         builder.setContentIntent(pendingIntent);
