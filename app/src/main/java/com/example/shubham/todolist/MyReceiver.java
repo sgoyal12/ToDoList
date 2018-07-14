@@ -44,7 +44,7 @@ boolean readOn;
                Intent intent2= new Intent(context,MainActivity.class);
                intent2.putExtra(Intent.EXTRA_TEXT,message);
                intent2.putExtra(MainActivity.NUMBER,number);//creating intent to be performed when notification is clicked
-               PendingIntent pendingIntent= PendingIntent.getActivity(context,1,intent2,0);//creating a pending intent for given intent
+               PendingIntent pendingIntent= PendingIntent.getActivity(context,1,intent2,PendingIntent.FLAG_UPDATE_CURRENT);//creating a pending intent for given intent
                builder.setContentIntent(pendingIntent);//set the pending content to  notification
                builder.setSmallIcon(R.drawable.ic_launcher_foreground);//set the icon of notification
                Notification notification=builder.build();//actually building the notification

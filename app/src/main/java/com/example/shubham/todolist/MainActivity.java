@@ -14,6 +14,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +30,10 @@ import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.widget.Toolbar;
+
+import com.nhaarman.listviewanimations.appearance.simple.AlphaInAnimationAdapter;
+import com.nhaarman.listviewanimations.appearance.simple.ScaleInAnimationAdapter;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,11 +51,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     ToDoAdapter adapter;
     LayoutInflater inflater;
     MenuItem item;
+    ToDoItem deleted=null;
+    int deletedPosition=0;
     Bundle bundle=new Bundle();
+    FloatingActionButton fab;
 //    MyReceiver receiver;
 
-
-    LinearLayout linear;
+    CoordinatorLayout linear;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,7 +89,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         cursor.close();
 
         adapter=new ToDoAdapter(this,toDoItems);
+
         lv.setAdapter(adapter);
+        fab=findViewById(R.id.Fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent add=new Intent(MainActivity.this,add.class);
+                add.putExtra(Intent.EXTRA_TEXT,"");
+                startActivityForResult(add,ADD_REQUEST_CODE);
+            }
+        });
         lv.setOnItemClickListener(this);
         lv.setOnItemLongClickListener(this);
     }
@@ -107,10 +126,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             contentValues.put(Contract.todo.Todo_COLOUMN_DATE,String.format("%d/%d/%d",mDay,mMonth+1,mYear));
             contentValues.put(Contract.todo.Todo_COLOUMN_TIME,String.format("%d:%d",mhours,mmin));
             long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
-            ToDoItem toDoItem=new ToDoItem(number,message,String.format("%d/%d/%d",mDay,mMonth+1,mYear),String.format("%d:%d",mhours,mmin));
             bundle.putLong(ID,id);
             int a=(int) id;
-            long timeInMillies=toDoItem.getTimeInMillies();
+            long timeInMillies=System.currentTimeMillis();
             Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
             intent1.putExtras(bundle);
             PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
@@ -132,14 +150,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id=item.getItemId();
-        if(id==R.id.add)
-        {
-            Intent add=new Intent(MainActivity.this,add.class);
-            add.putExtra(Intent.EXTRA_TEXT,"");
-            startActivityForResult(add,ADD_REQUEST_CODE);
-
-        }
-        else if(id==R.id.orderbytitle)
+        if(id==R.id.orderbytitle)
             {
             orderbytitle();
 
@@ -241,21 +252,65 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long i) {
-        ToDoItem toDoItem=toDoItems.get(position);
+        final ToDoItem toDoItem=toDoItems.get(position);
        final String[] array={""+toDoItem.getId()};
         ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
        final SQLiteDatabase database=openHelper.getWritableDatabase();
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+        final AlertDialog.Builder builder=new AlertDialog.Builder(this);
         builder.setTitle("Confirm Delete");
         builder.setMessage("Do You Really Want To Delete");
         builder.setCancelable(false);
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-
+                Bundle bundle=new Bundle();
                 database.delete(Contract.todo.Todo_TABLE_NAME,Contract.todo.Todo_COLOUMN_ID+"=?",array);
+                Intent intent1 = new Intent(getApplicationContext(),desc.class),intent=new Intent(getApplicationContext(),MyReceiver2.class);
+                bundle.putLong(MainActivity.ID,toDoItems.get(position).getId());
+                int a=(int) toDoItems.get(position).getId();
+                intent1.putExtras(bundle);
+                intent.putExtras(bundle);
+                PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),2,intent1,PendingIntent.FLAG_UPDATE_CURRENT)
+                        ,pendingIntent1=PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
+                AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                long timeInMillies=toDoItems.get(position).getTimeInMillies();
+                alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent1);
+                alarmManager.cancel(pendingIntent1);
+                pendingIntent.cancel();
+                deleted=toDoItems.get(position);
                 toDoItems.remove(position);
                 adapter.notifyDataSetChanged();
+                Snackbar.make(linear,"Todo deleted",Snackbar.LENGTH_LONG).setAction("Undo", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Bundle bundle1=new Bundle();
+                        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(MainActivity.this);
+                        SQLiteDatabase database=openHelper.getWritableDatabase();
+                        ContentValues contentValues=new ContentValues();
+                        contentValues.put(Contract.todo.Todo_COLOUMN_NAME,deleted.getName());
+                        contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,deleted.getDescription());
+                        contentValues.put(Contract.todo.Todo_COLOUMN_DATE,deleted.getDate());
+                        contentValues.put(Contract.todo.Todo_COLOUMN_TIME,deleted.getTime());
+                        long timeInMillies=deleted.getTimeInMillies();
+                        long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+                        deleted.setId(id);
+                        if(timeInMillies>=System.currentTimeMillis())
+                        {
+                            int a=(int) id;
+                            Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
+                            bundle1.putLong(MainActivity.ID,id);
+                            intent1.putExtras(bundle1);
+                            PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
+                            AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                            alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
+                        }
+                        toDoItems.add(position,deleted);
+                        adapter.notifyDataSetChanged();
+
+                    }
+                }).show();
+
+
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

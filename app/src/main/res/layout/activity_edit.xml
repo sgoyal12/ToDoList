@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/background"
     android:orientation="vertical"
     tools:context="com.example.shubham.todolist.Edit">
     <EditText
@@ -12,13 +13,15 @@
         android:hint="Enter Title here"
         android:id="@+id/gettitle"
         android:inputType="text"
-        android:textSize="25dp"/>
+        android:textSize="25dp"
+        android:fontFamily="cursive"/>
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Description Here"
         android:id="@+id/getdesc"
         android:inputType="text"
+        android:fontFamily="cursive"
         android:textSize="25dp"/>
     <TextView
         android:layout_width="match_parent"
@@ -26,12 +29,14 @@
         android:hint="Enter Date"
         android:inputType="none"
         android:textSize="25dp"
+        android:fontFamily="cursive"
         android:id="@+id/getdate"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Time"
         android:inputType="none"
+        android:fontFamily="cursive"
         android:textSize="25dp"
         android:id="@+id/gettime"/>
     <Button

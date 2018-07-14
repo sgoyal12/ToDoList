@@ -5,18 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@drawable/background"
     tools:context="com.example.shubham.todolist.desc">
 <TextView
     android:layout_width="match_parent"
     android:layout_height="0dp"
     android:layout_weight="0.15"
     android:hint="Title Will Be Shown Here"
+    android:fontFamily="cursive"
     android:textSize="30dp"
     android:id="@+id/nametv1"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:textSize="30dp"
+        android:fontFamily="cursive"
         android:layout_weight="1"
         android:hint="Description Is Shown Here"
         android:id="@+id/desctv1"
@@ -30,6 +33,7 @@
             android:layout_width="0dp"
             android:textSize="30dp"
             android:layout_weight="0.1"
+            android:fontFamily="cursive"
             android:hint="Date Is Shown Here"
             android:id="@+id/datetv1"
             />
@@ -37,6 +41,7 @@
             android:layout_height="match_parent"
             android:layout_width="0dp"
             android:textSize="30dp"
+            android:fontFamily="cursive"
             android:layout_weight="0.1"
             android:hint="Time Is Shown Here"
             android:id="@+id/timetv1"

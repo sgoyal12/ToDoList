@@ -16,7 +16,6 @@ public class MyReceiver2 extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Toast.makeText(context,"ahdsnhjhdsd",Toast.LENGTH_LONG).show();
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
@@ -33,10 +32,10 @@ public class MyReceiver2 extends BroadcastReceiver {
         builder.setContentText("Alarm Received");
         builder.setSmallIcon(R.drawable.ic_launcher_foreground);
 
-        Intent intent1 = new Intent(context,desc.class);
+        Intent intent1 = new Intent(context.getApplicationContext(),desc.class);
         bundle=intent.getExtras();
         intent1.putExtras(bundle);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context,2,intent1,0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context.getApplicationContext(),2,intent1,PendingIntent.FLAG_UPDATE_CURRENT);
 
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
