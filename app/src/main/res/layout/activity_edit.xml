@@ -14,14 +14,14 @@
         android:id="@+id/gettitle"
         android:inputType="text"
         android:textSize="25dp"
-        android:fontFamily="cursive"/>
+        android:fontFamily="casual"/>
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Description Here"
         android:id="@+id/getdesc"
         android:inputType="text"
-        android:fontFamily="cursive"
+        android:fontFamily="casual"
         android:textSize="25dp"/>
     <TextView
         android:layout_width="match_parent"
@@ -29,14 +29,14 @@
         android:hint="Enter Date"
         android:inputType="none"
         android:textSize="25dp"
-        android:fontFamily="cursive"
+        android:fontFamily="casual"
         android:id="@+id/getdate"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Time"
         android:inputType="none"
-        android:fontFamily="cursive"
+        android:fontFamily="casual"
         android:textSize="25dp"
         android:id="@+id/gettime"/>
     <Button
@@ -44,6 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="48dp"
+        android:fontFamily="monospace"
         android:text="SAVE"
         android:id="@+id/save"
         android:textSize="25dp"/>

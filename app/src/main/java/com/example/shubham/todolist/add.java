@@ -83,7 +83,7 @@ public class add extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if(et1.getText().toString()!=""||et2.getText().toString()==""||et3.getText().toString()!=""||tv4.getText().toString()!="")
+                if(!(et1.getText().toString().equals("")||et2.getText().toString().equals("")))
                 {
 
                     Bundle bundle=new Bundle();
@@ -99,6 +99,7 @@ public class add extends AppCompatActivity {
                     contentValues.put(Contract.todo.Todo_COLOUMN_TIME,time);
                     ToDoItem toDoItem=new ToDoItem(et1.getText().toString(),et2.getText().toString(),date,time);
                     long timeInMillies=toDoItem.getTimeInMillies();
+                    contentValues.put(Contract.todo.Todo_COLOUMN_TIMEINMILLIES,timeInMillies);
                     long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
                     int a=(int) id;
                     bundle.putLong(MainActivity.ID,id);

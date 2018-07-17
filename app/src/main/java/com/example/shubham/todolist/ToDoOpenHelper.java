@@ -29,7 +29,8 @@ public class ToDoOpenHelper extends SQLiteOpenHelper {
                 +Contract.todo.Todo_COLOUMN_NAME+" TEXT,"
                 +Contract.todo.Todo_COLOUMN_DESCRIPTION+" TEXT,"
                 +Contract.todo.Todo_COLOUMN_DATE + " Text,"
-                +Contract.todo.Todo_COLOUMN_TIME+" Text)";
+                +Contract.todo.Todo_COLOUMN_TIME+" Text,"
+                +Contract.todo.Todo_COLOUMN_TIMEINMILLIES+" INTEGER)";
         db.execSQL(SQLquery);
     }
 

@@ -21,6 +21,11 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.telephony.SmsMessage;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -32,16 +37,14 @@ import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
-import com.nhaarman.listviewanimations.appearance.simple.AlphaInAnimationAdapter;
-import com.nhaarman.listviewanimations.appearance.simple.ScaleInAnimationAdapter;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 
 import static android.provider.Telephony.Sms.Intents.getMessagesFromIntent;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
-    ListView lv;
+public class MainActivity extends AppCompatActivity implements TodoListener {
+    RecyclerView rv;
     ArrayList<ToDoItem> toDoItems=new ArrayList<>();
 
     public final static String ID="ItemID",POS="position",NUMBER="number",READ_ON="readon";
@@ -67,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         readOn=sharedPreferences.getBoolean(READ_ON,false);
         if((checkSelfPermission(Manifest.permission.READ_SMS)== PackageManager.PERMISSION_GRANTED)&&(checkSelfPermission(Manifest.permission.RECEIVE_SMS)== PackageManager.PERMISSION_GRANTED))
             perm=true;
-        lv=findViewById(R.id.list);
+        rv=findViewById(R.id.recyclerView);
 
         inflater= (LayoutInflater) this.getSystemService(this.LAYOUT_INFLATER_SERVICE);
         linear=findViewById(R.id.linear);
@@ -88,9 +91,105 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         cursor.close();
 
-        adapter=new ToDoAdapter(this,toDoItems);
+        adapter=new ToDoAdapter(this,toDoItems,this);
 
-        lv.setAdapter(adapter);
+        rv.setAdapter(adapter);
+        rv.addItemDecoration(new DividerItemDecoration(this,DividerItemDecoration.VERTICAL));
+        rv.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false));
+        rv.setItemAnimator(new DefaultItemAnimator());
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP|ItemTouchHelper.DOWN,ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder fromVH, @NonNull RecyclerView.ViewHolder toVH) {
+                int from = fromVH.getAdapterPosition();
+                int to = toVH.getAdapterPosition();
+
+                ToDoItem toDoItem = toDoItems.get(from);
+                toDoItems.remove(from);
+                toDoItems.add(to,toDoItem);
+
+                adapter.notifyItemMoved(from,to);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+                final int position=viewHolder.getAdapterPosition();
+                final ToDoItem toDoItem=toDoItems.get(position);
+                final String[] array={""+toDoItem.getId()};
+                ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(MainActivity.this);
+                final SQLiteDatabase database=openHelper.getWritableDatabase();
+                final AlertDialog.Builder builder=new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Confirm Delete");
+                builder.setMessage("Do You Really Want To Delete");
+                builder.setCancelable(false);
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Bundle bundle=new Bundle();
+                        database.delete(Contract.todo.Todo_TABLE_NAME,Contract.todo.Todo_COLOUMN_ID+"=?",array);
+                        Intent intent1 = new Intent(getApplicationContext(),desc.class),intent=new Intent(getApplicationContext(),MyReceiver2.class);
+                        bundle.putLong(MainActivity.ID,toDoItems.get(position).getId());
+                        int a=(int) toDoItems.get(position).getId();
+                        intent1.putExtras(bundle);
+                        intent.putExtras(bundle);
+                        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),2,intent1,PendingIntent.FLAG_UPDATE_CURRENT)
+                                ,pendingIntent1=PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
+                        AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                        long timeInMillies=toDoItems.get(position).getTimeInMillies();
+                        alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent1);
+                        alarmManager.cancel(pendingIntent1);
+                        pendingIntent.cancel();
+                        deleted=toDoItems.get(position);
+                        toDoItems.remove(position);
+                        adapter.notifyItemRemoved(position);
+                        Snackbar.make(linear,"Todo deleted",Snackbar.LENGTH_LONG).setAction("Undo", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                Bundle bundle1=new Bundle();
+                                ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(MainActivity.this);
+                                SQLiteDatabase database=openHelper.getWritableDatabase();
+                                ContentValues contentValues=new ContentValues();
+                                contentValues.put(Contract.todo.Todo_COLOUMN_NAME,deleted.getName());
+                                contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,deleted.getDescription());
+                                contentValues.put(Contract.todo.Todo_COLOUMN_DATE,deleted.getDate());
+                                contentValues.put(Contract.todo.Todo_COLOUMN_TIME,deleted.getTime());
+                                long timeInMillies=deleted.getTimeInMillies();
+                                contentValues.put(Contract.todo.Todo_COLOUMN_TIMEINMILLIES,timeInMillies);
+                                long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
+                                deleted.setId(id);
+                                if(timeInMillies>=System.currentTimeMillis())
+                                {
+                                    int a=(int) id;
+                                    Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
+                                    bundle1.putLong(MainActivity.ID,id);
+                                    intent1.putExtras(bundle1);
+                                    PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
+                                    AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
+                                    alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
+                                }
+                                toDoItems.add(position,deleted);
+                                adapter.notifyItemInserted(position);
+
+                            }
+                        }).show();
+
+
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                AlertDialog dialog=builder.create();
+                dialog.show();
+
+            }
+        });
+
+        itemTouchHelper.attachToRecyclerView(rv);
         fab=findViewById(R.id.Fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,8 +199,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 startActivityForResult(add,ADD_REQUEST_CODE);
             }
         });
-        lv.setOnItemClickListener(this);
-        lv.setOnItemLongClickListener(this);
     }
 
     private void addMessage(Intent intent) {
@@ -125,10 +222,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,message);
             contentValues.put(Contract.todo.Todo_COLOUMN_DATE,String.format("%d/%d/%d",mDay,mMonth+1,mYear));
             contentValues.put(Contract.todo.Todo_COLOUMN_TIME,String.format("%d:%d",mhours,mmin));
+            long timeInMillies=System.currentTimeMillis();
+            contentValues.put(Contract.todo.Todo_COLOUMN_TIMEINMILLIES,timeInMillies);
             long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
             bundle.putLong(ID,id);
             int a=(int) id;
-            long timeInMillies=System.currentTimeMillis();
             Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
             intent1.putExtras(bundle);
             PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
@@ -154,6 +252,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             {
             orderbytitle();
 
+        }
+        else if(id==R.id.orderbydesc)
+        {
+            orderByDesc();
+        }
+        else if(id==R.id.orderbydate)
+        {
+            orderByDate();
         }
         else if(id==R.id.makeSmsTodo)
         {
@@ -217,6 +323,46 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return true;
     }
 
+    private void orderByDate() {
+        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
+        SQLiteDatabase database=openHelper.getReadableDatabase();
+        Cursor cursor=database.query(Contract.todo.Todo_TABLE_NAME,null,null,null,null,null,Contract.todo.Todo_COLOUMN_TIMEINMILLIES);
+        toDoItems.clear();
+        while (cursor.moveToNext())
+        {
+            String name=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME));
+            String description=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION));
+            String date=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE));
+            String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
+            Long id=cursor.getLong(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_ID));
+            ToDoItem toDoItem =new ToDoItem(name,description,date, time);
+            toDoItem.setId(id);
+            toDoItems.add(toDoItem);
+        }
+        cursor.close();
+        adapter.notifyDataSetChanged();
+    }
+
+    private void orderByDesc() {
+        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
+        SQLiteDatabase database=openHelper.getReadableDatabase();
+        Cursor cursor=database.query(Contract.todo.Todo_TABLE_NAME,null,null,null,null,null,Contract.todo.Todo_COLOUMN_DESCRIPTION);
+        toDoItems.clear();
+        while (cursor.moveToNext())
+        {
+            String name=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_NAME));
+            String description=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DESCRIPTION));
+            String date=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_DATE));
+            String time=cursor.getString(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_TIME));
+            Long id=cursor.getLong(cursor.getColumnIndex(Contract.todo.Todo_COLOUMN_ID));
+            ToDoItem toDoItem =new ToDoItem(name,description,date, time);
+            toDoItem.setId(id);
+            toDoItems.add(toDoItem);
+        }
+        cursor.close();
+        adapter.notifyDataSetChanged();
+    }
+
     private void orderbytitle() {
         ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
         SQLiteDatabase database=openHelper.getReadableDatabase();
@@ -237,92 +383,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         adapter.notifyDataSetChanged();
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-        ToDoItem item=toDoItems.get(position);
-        Intent i=new Intent(MainActivity.this,desc.class);
-//        bundle.putString(TITLE,item.getName());
-//        bundle.putString(DESC,item.getDescription());
-//        bundle.putString(DATE,item.getDate());
-        bundle.putLong(ID,item.getId());
-        bundle.putInt(POS,position);
-        i.putExtras(bundle);
-        startActivityForResult(i,DESC_REQUEST_CODE);
-    }
-
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long i) {
-        final ToDoItem toDoItem=toDoItems.get(position);
-       final String[] array={""+toDoItem.getId()};
-        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(this);
-       final SQLiteDatabase database=openHelper.getWritableDatabase();
-        final AlertDialog.Builder builder=new AlertDialog.Builder(this);
-        builder.setTitle("Confirm Delete");
-        builder.setMessage("Do You Really Want To Delete");
-        builder.setCancelable(false);
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Bundle bundle=new Bundle();
-                database.delete(Contract.todo.Todo_TABLE_NAME,Contract.todo.Todo_COLOUMN_ID+"=?",array);
-                Intent intent1 = new Intent(getApplicationContext(),desc.class),intent=new Intent(getApplicationContext(),MyReceiver2.class);
-                bundle.putLong(MainActivity.ID,toDoItems.get(position).getId());
-                int a=(int) toDoItems.get(position).getId();
-                intent1.putExtras(bundle);
-                intent.putExtras(bundle);
-                PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),2,intent1,PendingIntent.FLAG_UPDATE_CURRENT)
-                        ,pendingIntent1=PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
-                AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
-                long timeInMillies=toDoItems.get(position).getTimeInMillies();
-                alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent1);
-                alarmManager.cancel(pendingIntent1);
-                pendingIntent.cancel();
-                deleted=toDoItems.get(position);
-                toDoItems.remove(position);
-                adapter.notifyDataSetChanged();
-                Snackbar.make(linear,"Todo deleted",Snackbar.LENGTH_LONG).setAction("Undo", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Bundle bundle1=new Bundle();
-                        ToDoOpenHelper openHelper=ToDoOpenHelper.getOpenHelper(MainActivity.this);
-                        SQLiteDatabase database=openHelper.getWritableDatabase();
-                        ContentValues contentValues=new ContentValues();
-                        contentValues.put(Contract.todo.Todo_COLOUMN_NAME,deleted.getName());
-                        contentValues.put(Contract.todo.Todo_COLOUMN_DESCRIPTION,deleted.getDescription());
-                        contentValues.put(Contract.todo.Todo_COLOUMN_DATE,deleted.getDate());
-                        contentValues.put(Contract.todo.Todo_COLOUMN_TIME,deleted.getTime());
-                        long timeInMillies=deleted.getTimeInMillies();
-                        long id=database.insert(Contract.todo.Todo_TABLE_NAME,null,contentValues);
-                        deleted.setId(id);
-                        if(timeInMillies>=System.currentTimeMillis())
-                        {
-                            int a=(int) id;
-                            Intent intent1=new Intent(getApplicationContext(),MyReceiver2.class);
-                            bundle1.putLong(MainActivity.ID,id);
-                            intent1.putExtras(bundle1);
-                            PendingIntent pendingIntent= PendingIntent.getBroadcast(getApplicationContext(),a,intent1,0);
-                            AlarmManager alarmManager= (AlarmManager) getSystemService(ALARM_SERVICE);
-                            alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillies,pendingIntent);
-                        }
-                        toDoItems.add(position,deleted);
-                        adapter.notifyDataSetChanged();
-
-                    }
-                }).show();
-
-
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        AlertDialog dialog=builder.create();
-        dialog.show();
-        return true;
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -346,14 +406,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if(resultCode==desc.DESC_RESULT_CODE)
             {
                 toDoItems.set(bundle.getInt(POS),toDoItem);
-                adapter.notifyDataSetChanged();
+                adapter.notifyItemChanged(bundle.getInt(POS));
             }
             if(resultCode==add.ADD_RESULT_CODE)
             {
                 if(id!=-1) {
                     toDoItem.setId(id);
                     toDoItems.add(toDoItem);
-                    adapter.notifyDataSetChanged();
+                    adapter.notifyItemInserted(toDoItems.size());
                 }
             }
     }}
@@ -386,4 +446,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
         }
     }
+
+    @Override
+    public void onItemClickListener(View view, int position) {
+        ToDoItem item=toDoItems.get(position);
+        Intent i=new Intent(MainActivity.this,desc.class);
+//        bundle.putString(TITLE,item.getName());
+//        bundle.putString(DESC,item.getDescription());
+//        bundle.putString(DATE,item.getDate());
+        bundle.putLong(ID,item.getId());
+        bundle.putInt(POS,position);
+        i.putExtras(bundle);
+        startActivityForResult(i,DESC_REQUEST_CODE);
+    }
+
+
 }

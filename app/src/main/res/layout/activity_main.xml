@@ -17,10 +17,10 @@
         android:id="@+id/Fab"
         android:src="@android:drawable/ic_input_add"/>
 
-    <ListView
-        android:id="@+id/list"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        ></ListView>
+        ></android.support.v7.widget.RecyclerView>
 
 </android.support.design.widget.CoordinatorLayout>

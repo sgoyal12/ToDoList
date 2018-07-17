@@ -7,6 +7,8 @@
     >
     <menu>
         <item android:id="@+id/orderbytitle" android:title="Title"></item>
+        <item android:id="@+id/orderbydesc" android:title="Description"></item>
+        <item android:id="@+id/orderbydate" android:title="Date"></item>
     </menu>
 </item>
     <item android:title="MakeSMSTodo" android:id="@+id/makeSmsTodo" android:checkable="true"

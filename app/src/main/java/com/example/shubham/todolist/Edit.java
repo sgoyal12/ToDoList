@@ -102,6 +102,7 @@ public final static int EDIT_RESULT_CODE=0;
                     contentValues.put(Contract.todo.Todo_COLOUMN_TIME,time);
                     ToDoItem toDoItem=new ToDoItem(et1.getText().toString(),et2.getText().toString(),date,time);
                     long timeInMillies=toDoItem.getTimeInMillies();
+                    contentValues.put(Contract.todo.Todo_COLOUMN_TIMEINMILLIES,timeInMillies);
                     long id=bundle.getLong(MainActivity.ID);
                     int a=(int) id;
                     bundle.putLong(MainActivity.ID,id);
